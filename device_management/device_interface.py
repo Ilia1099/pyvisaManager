@@ -1,56 +1,53 @@
-from abc import ABC, abstractmethod
 import pyvisa
 from typing import Literal
 from pyvisa.resources import MessageBasedResource
+from pyvisa.errors import VisaIOError
+import logging
+
+logger = logging
+logger.basicConfig(level=logging.ERROR)
 
 
-class InterfaceAbsFactory(ABC):
+def io_handling(func):
     """
-    Abstract factory for creation of Device Interface object
+    decorator for handling "VisaIOError" exception which happens in case of
+    connection issues
     """
-    @staticmethod
-    @abstractmethod
-    def create_interface(rm: pyvisa.ResourceManager, address: str):
-        ...
+    def wrapper(*args, **kwargs):
+        try:
+            res = func(*args, **kwargs)
+            return res
+        except VisaIOError as e:
+            logger.error(
+                f"Exception, device: {kwargs['device_url']}",
+                exc_info=True)
+    return wrapper
 
 
-class InterfaceFactory(InterfaceAbsFactory):
+class InterfaceFactory:
     """
-    Actual implementation of Device Interface object
+    Device Interface class factory
     """
     @staticmethod
     def create_interface(rm: pyvisa.ResourceManager, address: str):
         return DeviceInterface(rm=rm, address=address)
 
 
-class AbstractInterface(ABC):
+class DeviceInterface:
     """
-    Abstract implementation of Device Interface
+    Device Interface class
     """
-    @abstractmethod
-    def read(self, encoding: str, command: str, chk_sz: int = None):
-        ...
-
-    @abstractmethod
-    def write(self, msg: str, trmnt: str, encoding: str, is_b_end: bool,
-              dt_type: Literal['s', 'b', 'c', 'd', 'o', 'x', 'X', 'e', 'E', 'f', 'F', 'g', 'G'],
-              values=None, sep: str = ","):
-        ...
-
-
-class DeviceInterface(AbstractInterface):
-    """
-    Current implementation of Device Interface class
-    """
-    def __init__(self, rm, address: str):
+    def __init__(self, rm: pyvisa.ResourceManager, address: str):
         """
         Class constructor
         :param rm: pyvisa.ResourceManager instance
         :param address: tcpip socket formatted address
         """
         self.retrieved_data = []
+        # noinspection PyTypeChecker
         self._inst: MessageBasedResource = rm.open_resource(address)
 
+    @io_handling
     def read(self, encoding: str, command: str, chk_sz: int = None):
         data = None
         if chk_sz:
@@ -61,6 +58,7 @@ class DeviceInterface(AbstractInterface):
             data = self._inst.read_binary_values()
         self.retrieved_data.append(data)
 
+    @io_handling
     def write(self, msg: str, trmnt: str, encoding: str, is_b_end: bool,
               dt_type: Literal['s', 'b', 'c', 'd', 'o', 'x', 'X', 'e', 'E',
               'f', 'F', 'g', 'G'],
@@ -75,3 +73,4 @@ class DeviceInterface(AbstractInterface):
                                            datatype=dt_type,
                                            is_big_endian=is_b_end,
                                            termination=trmnt)
+

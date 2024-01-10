@@ -1,37 +1,14 @@
 import pyvisa
-from exception_handling_for_visa import io_handling
-from abc import ABC, abstractmethod
 from device_interface import InterfaceFactory
 
 
-class AbsManager(ABC):
-    """
-    abstract class for managing device's interface
-    """
-    @abstractmethod
-    def add_new_device_interface(self):
-        ...
-
-    @abstractmethod
-    def read_from_device(self):
-        ...
-
-    @abstractmethod
-    def write_to_device(self):
-        ...
-
-    @abstractmethod
-    def get_data(self, address: str):
-        ...
-
-
-class DeviceManager(AbsManager):
+class DeviceManager:
     """
     Resource managing class, holds all open interfaces and resource managing
     object
     """
 
-    def __init__(self, factory, rm_bknd: str = "@py"):
+    def __init__(self, factory: InterfaceFactory, rm_bknd: str = "@py"):
         """
         Class constructor
         :param factory: Device Interface factory
@@ -40,9 +17,8 @@ class DeviceManager(AbsManager):
         """
         self._devices: dict = {}
         self._rm: pyvisa.ResourceManager = pyvisa.ResourceManager(rm_bknd)
-        self._dev_factory: InterfaceFactory = factory
+        self._dev_factory = factory
 
-    @io_handling
     def add_new_device_interface(self, address: str):
         """
         Creates new device interface instance and adds it to dictionary
@@ -53,7 +29,6 @@ class DeviceManager(AbsManager):
         )
         self._devices[address] = interface
 
-    @io_handling
     def read_from_device(self, address: str, encoding: str, command: str,
                          chk_sz: int = None):
         """
@@ -67,7 +42,6 @@ class DeviceManager(AbsManager):
             encoding=encoding, command=command, chk_sz=chk_sz
         )
 
-    @io_handling
     def write_to_device(self, address: str, encoding: str, msg: str,
                         trmnt: str, dt_type="f", values=None, sep: str = ","):
         """
