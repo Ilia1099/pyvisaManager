@@ -19,7 +19,7 @@ def io_handling(func):
             return res
         except VisaIOError as e:
             logger.error(
-                f"Exception, device: {kwargs['device_url']}",
+                f"Exception, device: {kwargs.get('address')}",
                 exc_info=True)
     return wrapper
 

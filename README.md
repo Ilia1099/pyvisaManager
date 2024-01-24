@@ -12,8 +12,6 @@ to make this you need to pass an AbstractInterface class
 After that you can add instances of different devices to DeviceManager
 To execute read, write operations and get data - use appropriate methods 
 
-## Current Status:
-Not finished; Check TODO list;
 ## Requirements:
 # Python:
 - [Python 3.11](https://www.python.org/downloads/)
